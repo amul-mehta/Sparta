@@ -1,5 +1,6 @@
 from operator import sub
 
+from scipy.stats._discrete_distns import planck_gen
 from sklearn.svm import SVC
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import LabelBinarizer
@@ -30,7 +31,7 @@ def predict_savings(month,year):
 
 api.add_resource(Predict, '/predict')"""
 
-@app.route('/predict', methods = ['POST'])
+@app.route('/predict', methods = ['POST','GET'])
 def predict():
     jsondata = request.data
     print jsondata
@@ -41,19 +42,19 @@ def predict():
     return json.dumps(result)
 
 
-@app.route('/balance', methods = ['POST'])
+@app.route('/balance', methods = ['POST','GET'])
 def balance():
     result = {'success':True,'balance': 1056.56}
     return json.dumps(result)
 
-@app.route('/nearestLocation', methods = ['POST'])
+@app.route('/nearestLocation', methods = ['POST','GET'])
 def nearestLocation():
     jsondata = request.data
     print jsondata
     data = json.loads(jsondata)
     lat = float(data['latitude'])
     lon = float(data['longitude'])
-    success,res = getNearestLocation(lat,lon)
+    success,res = getNearestLocation(lat,lon,False)
     if success:
         result = {'success':True, 'nearestLocations':res}
     else:
@@ -61,8 +62,8 @@ def nearestLocation():
     return json.dumps(result)
 
 
-def getNearestLocation(lat,lon):
-    payload={'location': str(lat) + ','+ str(lon) , 'radius' : 20 , 'type': 'bank', 'keyword' : 'bank of america', 'key' : gmaps_key}
+def getNearestLocation(lat,lon,placeId):
+    payload={'location': str(lat) + ','+ str(lon) , 'radius' : 20000 , 'type': 'bank', 'keyword' : 'bank of america', 'key' : gmaps_key}
     r = requests.get('https://maps.googleapis.com/maps/api/place/nearbysearch/json',  params=payload)
     #https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=-33.8670522,151.1957362&radius=500&type=restaurant&keyword=cruise&key=YOUR_API_KEY
     #r = requests.put('https://maps.googleapis.com/maps/api/place/nearbysearch/json', )
@@ -74,9 +75,44 @@ def getNearestLocation(lat,lon):
         success = False
     else:
         add = json_results['results'][0]['vicinity']
+        placeid = json_results['results'][0]['place_id']
+        if placeId:
+            return placeid
     return success,add
 
 
+
+@app.route('/openHours', methods = ['POST','GET'])
+def openHours():
+    jsondata = request.data
+    print jsondata
+    data = json.loads(jsondata)
+    lat = float(data['latitude'])
+    lon = float(data['longitude'])
+    success, res = getOpenHours(lat, lon)
+    if success:
+        result = {'success': True, 'openHours': res}
+    else:
+        result = {'success': False, 'openHours': 'null'}
+    return json.dumps(result)
+
+
+def getOpenHours(lat,lon):
+    placeId = getNearestLocation(lat,lon,True)
+    payload={'placeid': placeId , 'key' : gmaps_key}
+    r = requests.get('https://maps.googleapis.com/maps/api/place/details/json',  params=payload)
+    #https://maps.googleapis.com/maps/api/place/details/json?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4&key=YOUR_API_KEY
+    #r = requests.put('https://maps.googleapis.com/maps/api/place/nearbysearch/json', )
+    json_results = r.json()
+    print json_results
+    success = True
+    add ='null'
+    if(json_results['status'] != 'OK'):
+        success = False
+    else:
+        print json_results['result']['opening_hours']
+
+    return success,add
 
 
 
