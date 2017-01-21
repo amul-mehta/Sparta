@@ -145,6 +145,6 @@ if __name__ == '__main__':
     classif = OneVsRestClassifier(estimator=SVC(random_state=0))
     model = classif.fit(XX, y)
 
-    app.run(debug=True)
+    app.run(debug=True,host='0.0.0.0')
 
 
