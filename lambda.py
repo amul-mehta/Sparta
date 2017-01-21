@@ -175,11 +175,11 @@ def make_appointment(intent,session):
     log = session['attributes']['IntentLog']
 
     if 'value' in intent['slots']['Time']:
-
         if 'value' in intent['slots']['Date']:
             date = intent['slots']['Date']['value']
         else:
             date = dt.datetime.today().strftime("%m/%d/%Y")
+        
 
 # --------------- Events ------------------
 

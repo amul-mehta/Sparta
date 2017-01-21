@@ -48,7 +48,7 @@ def getNearestBank(location):
     except URLError, e:
         print('Unable to get nearest bank. Got an error code:', e)
 	'''
-
+print getBalance()
 bostonLocation = getLatLug('Boston')
 print bostonLocation
 print getNearestBank(bostonLocation)
