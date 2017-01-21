@@ -15,6 +15,8 @@ app = Flask(__name__)
 
 gmaps_key = 'AIzaSyCf-ptFKCPN9Tp5sxdx02nXBSsl8pZmSv8'
 
+recipient = ['amul','aashish']
+
 def predict_savings(month,year):
     income = XX[len(XX) - 1] [2]
     XY  = [ [ int(month),int(year),int(income) ] ]
@@ -31,7 +33,7 @@ def predict_savings(month,year):
 
 api.add_resource(Predict, '/predict')"""
 
-@app.route('/predict', methods = ['POST','GET'])
+@app.route('/predict', methods = ['GET'])
 def predict():
     month = request.args.get('month')
     year = request.args.get('year')
@@ -39,18 +41,17 @@ def predict():
     return json.dumps(result)
 
 
-@app.route('/balance', methods = ['POST','GET'])
+@app.route('/balance', methods = ['GET'])
 def balance():
+    uid = request.args.get('userId')
+    print uid
     result = {'success':True,'balance': 1056.56}
     return json.dumps(result)
 
-@app.route('/nearestLocation', methods = ['POST','GET'])
+@app.route('/nearestLocation', methods = ['GET'])
 def nearestLocation():
-    jsondata = request.data
-    print jsondata
-    data = json.loads(jsondata)
-    lat = float(data['latitude'])
-    lon = float(data['longitude'])
+    lat = float(request.args.get('latitude'))
+    lon = float(request.args.get('longitude'))
     success,res = getNearestLocation(lat,lon,False)
     if success:
         result = {'success':True, 'nearestLocations':res}
@@ -79,14 +80,13 @@ def getNearestLocation(lat,lon,placeId):
 
 
 
-@app.route('/openHours', methods = ['POST','GET'])
+@app.route('/openHours', methods = ['GET'])
 def openHours():
-    jsondata = request.data
-    print jsondata
-    data = json.loads(jsondata)
-    lat = float(data['latitude'])
-    lon = float(data['longitude'])
-    success, res = getOpenHours(lat, lon)
+    lat = float(request.args.get('latitude'))
+    lon = float(request.args.get('longitude'))
+    dy = int(request.args.get('day'))
+
+    success, res = getOpenHours(lat, lon,dy)
     if success:
         result = {'success': True, 'openHours': res}
     else:
@@ -94,7 +94,7 @@ def openHours():
     return json.dumps(result)
 
 
-def getOpenHours(lat,lon):
+def getOpenHours(lat,lon,day):
     placeId = getNearestLocation(lat,lon,True)
     payload={'placeid': placeId , 'key' : gmaps_key}
     r = requests.get('https://maps.googleapis.com/maps/api/place/details/json',  params=payload)
@@ -107,9 +107,19 @@ def getOpenHours(lat,lon):
     if(json_results['status'] != 'OK'):
         success = False
     else:
-        print json_results['result']['opening_hours']
-
+        today = ' '.join(json_results['result']['opening_hours']['weekday_text'][day-1].split(":")[1:]).replace(u'\u2013','-')
+        tomorrow = ' '.join(json_results['result']['opening_hours']['weekday_text'][(day) % 7].split(":")[1:]).replace(u'\u2013','-')
+        current =   json_results['result']['opening_hours']['open_now']
+        success = True
+        add = {'today':today,'tomorrow':tomorrow,'current':current}
     return success,add
+
+######################################################################################################################################################
+
+
+@app.route('/transferMoney', methods = ['GET'])
+def transferMoney():
+    return
 
 
 
