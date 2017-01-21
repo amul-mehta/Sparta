@@ -35,11 +35,6 @@ api.add_resource(Predict, '/predict')"""
 def predict():
     month = request.args.get('month')
     year = request.args.get('year')
-
-    #print jsondata
-    #data = json.loads(jsondata)
-    #month = data['month']
-    #year = data['year']
     result = {'success':True, 'predict':int(predict_savings(month,year)[0])}
     return json.dumps(result)
 
