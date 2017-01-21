@@ -1,5 +1,7 @@
 from urllib2 import Request, urlopen, URLError
+import urllib
 import json
+
 BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
 
 def getLatLug(address):
@@ -31,10 +33,12 @@ def getBalance():
 
 def getNearestBank(location):
     lat,lng = location
-    url = BackEndURL+'/nearestLocation'
-    post_fields = {"latitude": lat, "longitude": lng}
-    request = Request(url,data=str(post_fields))
-
+    url = BackEndURL+'/nearestLocation/json?'
+    post_fields = {"latitude": str(lat), "longitude": str(lng)}
+    data = urllib.urlencode(post_fields)
+    print data
+    request = Request(url,data=data)
+    #request.get_method = lambda: "POST"
     response = urlopen(request)
     content = json.loads(response.read())
     return content['nearestLocations']
@@ -44,6 +48,7 @@ def getNearestBank(location):
     except URLError, e:
         print('Unable to get nearest bank. Got an error code:', e)
 	'''
+
 bostonLocation = getLatLug('Boston')
 print bostonLocation
 print getNearestBank(bostonLocation)
