@@ -33,11 +33,13 @@ api.add_resource(Predict, '/predict')"""
 
 @app.route('/predict', methods = ['POST','GET'])
 def predict():
-    jsondata = request.data
-    print jsondata
-    data = json.loads(jsondata)
-    month = data['month']
-    year = data['year']
+    month = request.args.get('month')
+    year = request.args.get('year')
+
+    #print jsondata
+    #data = json.loads(jsondata)
+    #month = data['month']
+    #year = data['year']
     result = {'success':True, 'predict':int(predict_savings(month,year)[0])}
     return json.dumps(result)
 

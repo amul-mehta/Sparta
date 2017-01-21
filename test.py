@@ -3,9 +3,10 @@ import json
 import requests
 
 conv = {'month': '6', 'year': '2015'}
-s = json.dumps(conv)
-print s
-res = requests.post("http://127.0.0.1:5000/predict",data=s)
+#s = json.dumps(conv)
+#print s
+s=conv
+res = requests.get("http://127.0.0.1:5000/predict",params=s)
 print res.text
 
 res = requests.post("http://127.0.0.1:5000/balance")
