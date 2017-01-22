@@ -1,3 +1,5 @@
+# Author: Xueguang Lu
+# Banking Alexa skill support script
 from __future__ import print_function
 from urllib2 import Request, urlopen, URLError
 import json
@@ -6,7 +8,7 @@ import urllib
 
 # --------------- Helpers for calling API layer ----------------------
 
-BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
+BackEndURL = 'https://python-hello-world-flask-amulmehta-2232.mybluemix.net'
 
 def getLatLug(address):
 
@@ -42,10 +44,8 @@ def getNearestBank(location):
     link = url +'?' + urllib.urlencode(post_fields)
     try:
         request = Request(link)
-        #request.get_method = lambda: "POST"
         response = urlopen(request)
         content = json.loads(response.read())
-        print(content['nearestLocations'])
         return content['nearestLocations']
 
     except URLError, e:
@@ -61,7 +61,6 @@ def getHour(location,day):
         request = Request(link)
         response = urlopen(request)
         content = json.loads(response.read())
-        print(content['openHours'])
         return content['openHours']
     except URLError, e:
         print('Unable to get Hours, Got an error code: ', e)
@@ -80,11 +79,37 @@ def transfer(name,amount):
         message = message[len(amount)+1:]
         if amount != 'Sorry,':
             amount = "{0:.2f}".format(round(float(amount),2)).split('.')
-            amount = '{} dollars and {} cents '.format(amount[0], amount[1] if amount[1]!='00' else '')
+            amount = '{} dollars {}'.format(amount[0], "and "+amount[1]+' cents ' if amount[1]!='00' else '')
             return amount+message+'.'
         return content['message']+'.'
     except URLError, e:
         print('Unable to transfer, Got an error code: ', e)
+
+def appointment(date,time,location):
+    url = BackEndURL + '/scheduleAppointment'
+    post_fields = {'time':time,'day:':date,'latitude':location[0],'longitude':location[1]}
+    link = url + '?' + urllib.urlencode(post_fields)
+    
+    try:
+        request = Request(link)
+        response = urlopen(request)
+        return response['message']
+    except URLError, e:
+        print('Unable to make appointment, Got an error code: ', e)
+
+def predict(month,year):
+    url = BackEndURL + '/predict'
+    post_fields = {'month':month,'year':year}
+    link = url + '?' + urllib.urlencode(post_fields)
+    try:
+        request = Request(link)
+        response = urlopen(request)
+        content = json.loads(response.read())
+        return content['predict']
+    except URLError, e:
+        print('Unable to generate prediction, Got an error code: ', e)
+
+
 
 # -------------------- Response Builders -----------------------
 
@@ -238,20 +263,47 @@ def address_only(intent,session):
             return make_appointment(intent, session)
         elif log[len(log)-i-1] == "GetOpenHourIntent":
             return get_open_hour(intent, session)
+        elif log[len(log)-i-1] == "AppointmentIntent":
+            return make_appointment(intent,session)
     return get_welcome_response()
+
 
 def make_appointment(intent,session): 
     session_attributes = {}
     if session.get('attributes', {}):
         session_attributes = session['attributes']
     log = session['attributes']['IntentLog']
+    today = dt.datetime.today().strftime("%Y-%m-%d")
+    date = time = location = None
 
-    if 'value' in intent['slots']['Time']:
-        if 'value' in intent['slots']['Date']:
-            date = intent['slots']['Date']['value']
-        else:
-            date = dt.datetime.today().strftime("%m/%d/%Y")
-        
+    if 'Time' in session_attributes:
+        time = session_attributes['Time']
+    if 'Date' in session_attributes:
+        date = session_attributes['Date']
+    if 'Location' in session_attributes:
+        location = session_attributes['Location']
+
+    if 'Time' in intent['slots'] and 'value' in intent['slots']['Time']:
+        time = intent['slots']['Time']['value']
+        session_attributes['Time'] = time
+    if 'Date' in intent['slots'] and 'value' in intent['slots']['Date']:
+        date = intent['slots']['Date']['value']
+        session_attributes['Date'] = date
+    else:
+        date = today
+    
+    if not time:
+        speech_output = 'What time do you want to schedule the appointment?'
+    elif not location:
+        speech_output = 'What location do you want to schedule the appointment? You can, say, 36 Main st.'
+    else:
+        # TODO try get appointment at the time 
+        # on sucess:
+        speech_output = appointment(date,time,location)
+        #speech_output = 'We got you an appointment at {}{} sucessfully, see you then.'.format(time,date if date!=today else '')
+
+    return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
+
 def get_open_hour(intent,session):
     session_attributes = {}
     if session.get('attributes', {}):
@@ -317,13 +369,15 @@ def make_transfer(intent,session):
         session_attributes['Amount'] = amount
 
     if amount and not recipient:
-        speech_output = "Who do you want this transfer to go to?"
+        speech_output = "Who do you want this transfer to go to? For example, say, to Luke."
     elif recipient and not amount:
-        speech_output = "How much do you want this transfer to be?"
+        speech_output = "How much do you want this transfer to be? For example, say, 100 dollars."
     elif recipient and amount:
         speech_output = transfer(recipient,amount)
+        del session_attributes['Amount']
+        del session_attributes['Person']
     else:
-        speech_output = "For transfering money, you can say: for example, transfer 100 dollars to Luke"
+        speech_output = "For transfering money, you can say: for example, transfer 100 dollars to Luke."
     return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
 
 # --------------- Events ------------------
@@ -364,12 +418,14 @@ def on_intent(intent_request, session):
         return get_nearest_branch(intent, session)
     elif intent_name == "AddressOnlyIntent":
         return address_only(intent,session)
-    elif intent_name == "AppointmentIntent":
+    elif intent_name == "AppointmentIntent" or intent_name == "TimeOnlyIntent":
         return make_appointment(intent, session)
     elif intent_name == "TransferMoneyIntent" or intent_name == "MoneyOnlyIntent" or intent_name == "PersonOnlyIntent":
         return make_transfer(intent, session)
     elif intent_name == "GetOpenHourIntent":
         return get_open_hour(intent, session)
+    elif intent_name == "PredictIntent":
+        return predict_handler(intent,session)
     elif intent_name == "AMAZON.YesIntent":
         return yes_handler()
     elif intent_name == "AMAZON.NoIntent":
