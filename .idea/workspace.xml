@@ -2,6 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="45a72589-4e3c-429d-8c2e-070002c80999" name="Default" comment="">
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/user.db" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/db_create.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.~lock.appointment.csv#" afterPath="$PROJECT_DIR$/.~lock.appointment.csv#" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/appointment.csv" afterPath="$PROJECT_DIR$/appointment.csv" />
