@@ -45,10 +45,7 @@ def login():
     cursor.execute("SELECT count(*) FROM AUTH WHERE userid = ?", (userid,))
     data = cursor.fetchone()[0]
     if data == 0:
-        conn_str = "INSERT INTO AUTH (USERID,AID,PASSWORD) \
-              VALUES (\'"+ userid + "\',\'"+ aid +"\',\'"+ paswd + "\')"
-        print conn_str
-        conn.execute(conn_str)
+        conn.execute("INSERT INTO AUTH (USERID,AID,PASSWORD) VALUES( ? , ? , ? )",(userid , aid , paswd ))
         result = {'success': True, 'message': "Logged in successfuly"}
     else:
         result = {'success': False, 'message': "User already logged in please log out from other sessions."}
@@ -58,18 +55,15 @@ def login():
 
     return json.dumps(result)
 
-@app.route('/logout', methods = ['POST'])
+@app.route('/logout', methods = ['GET'])
 def logout():
-    jsondata = request.data
-    print jsondata
-    data = json.loads(jsondata)
-    userid = data['userid']
-    aid = data['aid']
+    userid = request.args.get('userid')
+    aid = request.args.get('aid')
 
     conn = sqlite3.connect('usr.db')
     cursor = conn.cursor()
 
-    cr = cursor.execute("DELETE FROM AUTH WHERE userid ="+userid+ " AND aid =" + aid)
+    cr = cursor.execute("DELETE FROM AUTH WHERE userid= ? AND aid= ?",(userid,aid))
     conn.commit()
     if cr.arraysize == 1 :
         result = {'success': True, 'message': "Logged out successfuly"}
@@ -214,11 +208,11 @@ def scheduleAppointment():
     now_date =int(now.split()[2])
     print now_date
     # if date is of next month then reply no
-    nearest = getNearestLocation(lat,lon,False)
-    day = 21 #0-29/30
-    month = 1
-    hour = 13
-    min = 25
+    suc,nearest = getNearestLocation(lat,lon,False)
+    day = day.split('-')[0] #0-29/30
+    month = day.split('-')[1]
+    hour = int(time.split(':')[0])
+    min = int(time.split(':')[1])
     print "HELLOO"
     if now_date > (day+1):
         success = False
@@ -253,7 +247,7 @@ def scheduleAppointment():
 
     if data[day][time_slot_hour] != '1':
         success = True
-        msg = "Your appointment is successfully confirmed at "+ getTimes([day,time_slot_hour])
+        msg = "Your appointment is successfully confirmed on "+ getTimes([day,time_slot_hour])+ " at "+ nearest
         data[day][time_slot_hour] = '1'
         datafile.close()
         datafile = open('appointment.csv','w')

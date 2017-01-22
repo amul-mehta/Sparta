@@ -29,7 +29,7 @@ s = {'time': '13:25', 'day': '2/10','latitude': '40.7127837', 'longitude': '-74.
 res = requests.get("http://127.0.0.1:5000/scheduleAppointment", params = s)
 print res.text
 
-s = {'userid': 'vaibhavrandi', 'password': 'sgfdgg','aid': 'dfgdfgessd33'}
+s = {'userid': 'vaibhavrsadfandi', 'password': 'sgfdgg','aid': 'dfgdfgessd33'}
 
 res = requests.get("http://127.0.0.1:5000/login", params = s)
 print res.text
