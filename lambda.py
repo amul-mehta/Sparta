@@ -66,6 +66,26 @@ def getHour(location,day):
     except URLError, e:
         print('Unable to get Hours, Got an error code: ', e)
 
+
+def transfer(name,amount):
+    url = BackEndURL + '/transferMoney'
+    post_fields = {'name':name.lower(),'amount':amount}
+    link = url +'?' + urllib.urlencode(post_fields)
+    try:
+        request = Request(link)
+        response = urlopen(request)
+        content = json.loads(response.read())
+        message = content['message']
+        amount = message.split(' ')[0]
+        message = message[len(amount)+1:]
+        if amount != 'Sorry,':
+            amount = "{0:.2f}".format(round(float(amount),2)).split('.')
+            amount = '{} dollars and {} cents '.format(amount[0], amount[1] if amount[1]!='00' else '')
+            return amount+message+'.'
+        return content['message']+'.'
+    except URLError, e:
+        print('Unable to transfer, Got an error code: ', e)
+
 # -------------------- Response Builders -----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
@@ -147,11 +167,14 @@ def add_location_to_attributes(session,address):
     session['attributes']['Location'] = getLatLug(address)
 
 def log_intent_to_attributes(session,intent_name):
-    if session.get('attributes', {}) and "IntentLog" in session.get('attributes', {}):
-        session['attributes']['IntentLog'].append(intent_name)
+    if session.get('attributes', {}): 
+        if "IntentLog" in session.get('attributes', {}):
+            session['attributes']['IntentLog'].append(intent_name)
+        else:
+            session['attributes']['IntentLog'] = [intent_name]
     else:
-        session['attributes']['IntentLog'] = [intent_name]
-
+        session['attributes'] = {'IntentLog':[intent_name]}
+        
 def add_date_time_to_attributes(session,datetime):
     session['attributes']['datetime'] = datetime
 
@@ -217,7 +240,7 @@ def address_only(intent,session):
             return get_open_hour(intent, session)
     return get_welcome_response()
 
-def make_appointment(intent,session):
+def make_appointment(intent,session): 
     session_attributes = {}
     if session.get('attributes', {}):
         session_attributes = session['attributes']
@@ -272,8 +295,36 @@ def get_open_hour(intent,session):
     tomorrow = 'bank open tomorrow from '+tomorrow if tomorrow != 'Closed' else 'tomorrow will {}be Closed all day.'.format('also ' if today=='Closed' else '')
     today = 'it opens today from '+today if today != 'Closed' else 'it\'s Closed today all day'
     speech_output = "Bank is currently {}, {}, {}".format(current,today,tomorrow)
-    reprompt_text = speech_output
-    return build_my_response(session_attributes,intent['name'],speech_output,reprompt_text)
+    return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
+
+
+def make_transfer(intent,session):
+    session_attributes = {}
+    if session.get('attributes', {}):
+        session_attributes = session['attributes']
+    recipient = amount = None
+
+    if 'Person' in session_attributes:
+        recipient = session_attributes["Person"]
+    if 'Amount' in session_attributes:
+        amount = session_attributes['Amount']
+
+    if 'Person' in intent['slots'] and 'value' in intent['slots']['Person']:
+        recipient = intent['slots']['Person']['value']
+        session_attributes['Person'] = recipient
+    if 'Amount' in intent['slots'] and 'value' in intent['slots']['Amount']:
+        amount = intent['slots']['Amount']['value']
+        session_attributes['Amount'] = amount
+
+    if amount and not recipient:
+        speech_output = "Who do you want this transfer to go to?"
+    elif recipient and not amount:
+        speech_output = "How much do you want this transfer to be?"
+    elif recipient and amount:
+        speech_output = transfer(recipient,amount)
+    else:
+        speech_output = "For transfering money, you can say: for example, transfer 100 dollars to Luke"
+    return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
 
 # --------------- Events ------------------
 
@@ -315,7 +366,7 @@ def on_intent(intent_request, session):
         return address_only(intent,session)
     elif intent_name == "AppointmentIntent":
         return make_appointment(intent, session)
-    elif intent_name == "TransferMoneyIntent":
+    elif intent_name == "TransferMoneyIntent" or intent_name == "MoneyOnlyIntent" or intent_name == "PersonOnlyIntent":
         return make_transfer(intent, session)
     elif intent_name == "GetOpenHourIntent":
         return get_open_hour(intent, session)
