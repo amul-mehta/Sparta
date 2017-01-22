@@ -66,14 +66,20 @@ def transfer(name,amount):
     url = BackEndURL + '/transferMoney'
     post_fields = {'name':name,'amount':amount}
     link = url +'?' + urllib.urlencode(post_fields)
-    #try:
-    print link
-    request = Request(link)
-    response = urlopen(request)
-    content = json.loads(response.read())
-    print(content)
- #   except URLError, e:
-  #      print('Unable to transfer, Got an error code: ', e)
+    try:
+        request = Request(link)
+        response = urlopen(request)
+        content = json.loads(response.read())
+        message = content['message']
+        amount = message.split(' ')[0]
+        message = message[len(amount)+1:]
+        if amount != 'Sorry,':
+            amount = "{0:.2f}".format(round(float(amount),2)).split('.')
+            amount = '{} dollars and {} cents '.format(amount[0], amount[1] if amount[1]!='00' else '')
+            return amount+message+'.'
+        return content['message']+'.'
+    except URLError, e:
+        print('Unable to transfer, Got an error code: ', e)
 
 
 #print 'get balance',getBalance()
@@ -81,7 +87,7 @@ def transfer(name,amount):
 #bostonLocation = getLatLug('detroit')
 #print getNearestBank(bostonLocation)
 
-print transfer('amul',3.2)
+print transfer('luke',100.2)
 
 
 
