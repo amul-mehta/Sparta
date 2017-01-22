@@ -209,8 +209,10 @@ def scheduleAppointment():
     print now_date
     # if date is of next month then reply no
     suc,nearest = getNearestLocation(lat,lon,False)
-    day = day.split('-')[0] #0-29/30
     month = day.split('-')[1]
+    day = int(day.split('-')[2]) #0-29/30
+    print day
+    day = day - 1
     hour = int(time.split(':')[0])
     min = int(time.split(':')[1])
     print "HELLOO"
@@ -307,7 +309,7 @@ def getTimes(times):
         slot =int (slot / 2)
         extra = '30'
     slot = int(slot) + 9
-    return str(day) + 'th '+str(slot)+':'+ extra
+    return str(day+1) + 'th '+str(slot)+':'+ extra
 
 
 
