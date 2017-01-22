@@ -99,6 +99,21 @@ def appointment(date,time,location):
         print('Unable to make appointment, Got an error code: ', e)
 
 def predict(month,year):
+    m = {
+        'jan': 1,
+        'feb': 2,
+        'mar': 3,
+        'apr':4,
+         'may':5,
+         'jun':6,
+         'jul':7,
+         'aug':8,
+         'sep':9,
+         'oct':10,
+         'nov':11,
+         'dec':12
+        }
+    month = m[month[:3].lower()]
     url = BackEndURL + '/predict'
     post_fields = {'month':month,'year':year}
     link = url + '?' + urllib.urlencode(post_fields)
@@ -445,7 +460,7 @@ def on_intent(intent_request, session):
         return make_transfer(intent, session)
     elif intent_name == "GetOpenHourIntent":
         return get_open_hour(intent, session)
-    elif intent_name == "PredictIntent":
+    elif intent_name == "PredictIntent" or intent_name == "MonthOnlyIntent":
         return predict_handler(intent,session)
     elif intent_name == "AMAZON.YesIntent":
         return yes_handler()
