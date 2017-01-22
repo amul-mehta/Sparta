@@ -39,10 +39,10 @@ def login():
     paswd = request.args.get('password')
     aid = request.args.get('aid')
 
-    conn = sqlite3.connect('user.db')
+    conn = sqlite3.connect('usr.db')
     cursor = conn.cursor()
 
-    cursor.execute("SELECT count(*) FROM AUTH WHERE userid = ?", (userid,))
+    cursor.execute("SELECT count(*) FROM AUTH WHERE userid = \""+userid+"\"")
     data = cursor.fetchone()[0]
     if data == 0:
         conn_str = "INSERT INTO AUTH (USERID,AID,PASSWORD) \
@@ -66,10 +66,10 @@ def logout():
     userid = data['userid']
     aid = data['aid']
 
-    conn = sqlite3.connect('user.db')
+    conn = sqlite3.connect('usr.db')
     cursor = conn.cursor()
 
-    cr = cursor.execute("DELETE FROM AUTH WHERE userid = ? AND aid = ?", (userid,aid))
+    cr = cursor.execute("DELETE FROM AUTH WHERE userid ="+userid+ " AND aid =" + aid)
     conn.commit()
     if cr.arraysize == 1 :
         result = {'success': True, 'message': "Logged out successfuly"}
