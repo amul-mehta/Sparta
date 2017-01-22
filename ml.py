@@ -13,7 +13,7 @@ app = Flask(__name__)
 
 gmaps_key = 'AIzaSyCf-ptFKCPN9Tp5sxdx02nXBSsl8pZmSv8'
 
-recipient = ['amul','luke']
+recipient = ['amul','luke','robert','john','joe']
 
 def predict_savings(month,year):
     income = XX[len(XX) - 1] [2]
