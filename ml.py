@@ -7,6 +7,8 @@ from sklearn.preprocessing import LabelBinarizer
 import csv
 from flask import Flask, request
 import requests
+import dateutil.parser
+
 
 
 import json
@@ -45,7 +47,7 @@ def predict():
 def balance():
     uid = request.args.get('userId')
     print uid
-    result = {'success':True,'balance': 1056.56}
+    result = {'success':True,'balance': balance}
     return json.dumps(result)
 
 @app.route('/nearestLocation', methods = ['GET'])
@@ -119,12 +121,87 @@ def getOpenHours(lat,lon,day):
 
 @app.route('/transferMoney', methods = ['GET'])
 def transferMoney():
-    return
+    success = False
+    global balance
+    msg = ""
+    #input : contact name and amount
+    name = request.args.get('name')
+    amount = float(request.args.get('amount'))
+    if (name in recipient) :
+        if (amount < balance):
+            balance = balance - amount
+            success = True
+            msg = str(amount) + " has been successfully submitted for transfer to "+ name
+        else:
+            msg = "Sorry, You do not have sufficient balance in your account"
+    else:
+        msg = "Sorry, Cannot find " + name + " in the recipient List"
+
+
+    result = {"success": success,"message" : msg }
+    return json.dumps(result)
+
+
+
+@app.route('/scheduleAppointment', methods = ['GET'])
+def scheduleAppointment():
+    success = False
+    msg = ""
+    time = request.args.get('time')
+    day = int(request.args.get('day'))
+    lat = request.args.get('latitude')
+    lon = request.args.get('longitude')
+    datafile = open('appointment.csv', 'r')
+    datareader = csv.reader(datafile, delimiter=',')
+    data = []
+    for row in datareader:
+        data.append(row)
+    print (data)
+
+    # if date is of next month then reply no
+    nearest = getNearestLocation(lat,lon,false)
+    day = 10
+    month = 2
+    hour = 13
+    min = 25
+    diff = min - 30
+    if diff < 0:
+        min = 30
+    else:
+        min = 00
+        hour = (hour + 1) % 24
+
+    if hour >= 0 and hour < 9 :
+        success = False
+        msg = "Bank does not operate on these hours"
+    elif hour >= 18 and hour <= 24:
+        success = False
+        msg = "Bank does not operate on these hours"
+
+    return json.dumps({'lol' : 50})
+    """
+    if ( in recipient) :
+        if (amount < balance):
+            balance = balance - amount
+            success = True
+            msg = str(amount) + " has been successfully submitted for transfer to "+ name
+        else:
+            msg = "Sorry, You do not have sufficient balance in your account"
+    else:
+        msg = "Sorry, Cannot find " + name + " in the recipient List"
+
+
+    result = {"success": success,"message" : msg }
+    return json.dumps(result)"""
+
+
 
 
 
 
 if __name__ == '__main__':
+
+    balance = 5000.0
 
     with open('data.csv', 'rb') as f:
         reader = csv.reader(f)
@@ -145,6 +222,6 @@ if __name__ == '__main__':
     classif = OneVsRestClassifier(estimator=SVC(random_state=0))
     model = classif.fit(XX, y)
 
-    app.run(debug=True,host='0.0.0.0')
+    app.run(debug=True,host="0.0.0.0")
 
 
