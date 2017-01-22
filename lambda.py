@@ -87,13 +87,14 @@ def transfer(name,amount):
 
 def appointment(date,time,location):
     url = BackEndURL + '/scheduleAppointment'
-    post_fields = {'time':time,'day:':date,'latitude':location[0],'longitude':location[1]}
+    post_fields = {'time':time,'day':date,'latitude':location[0],'longitude':location[1]}
     link = url + '?' + urllib.urlencode(post_fields)
     
     try:
         request = Request(link)
         response = urlopen(request)
-        return response['message']
+        content = json.loads(response.read())
+        return content['message']
     except URLError, e:
         print('Unable to make appointment, Got an error code: ', e)
 
@@ -379,6 +380,26 @@ def make_transfer(intent,session):
     else:
         speech_output = "For transfering money, you can say: for example, transfer 100 dollars to Luke."
     return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
+
+def predict_handler(intent,session):
+    session_attributes = {}
+    if session.get('attributes', {}):
+        session_attributes = session['attributes']
+    month = None
+
+    if "Month" in session_attributes:
+        month = session_attributes['Month']
+
+    if "Month" in intent['slots'] and 'value' in intent['slots']['Month']:
+        month = intent['slots']['Month']['value']
+    
+    if not month:
+        speech_output = "Please tell me a speicifc month, for example, say, July."
+    else:
+        speech_output = predict(month,2017)
+
+    return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
+
 
 # --------------- Events ------------------
 

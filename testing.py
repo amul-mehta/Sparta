@@ -2,8 +2,9 @@ from urllib2 import Request, urlopen, URLError
 import urllib
 import json
 
-#BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
-BackEndURL = 'https://python-hello-world-flask-amulmehta-2232.mybluemix.net'
+BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
+#BackEndURL = 'https://python-hello-world-flask-amulmehta-2232.mybluemix.net'
+
 def getLatLug(address):
 
 	KEY = 'AIzaSyC6J06KCLzmvuoab3ve5asK0ygAOvF2wVc'
@@ -84,13 +85,14 @@ def transfer(name,amount):
 
 def appointment(date,time,location):
     url = BackEndURL + '/scheduleAppointment'
-    post_fields = {'time':time,'day:':date,'latitude':location[0],'longitude':location[1]}
+    post_fields = {'time':time,'day':date,'latitude':location[0],'longitude':location[1]}
     link = url + '?' + urllib.urlencode(post_fields)
     
     try:
         request = Request(link)
         response = urlopen(request)
-        return response['message']
+        content = json.loads(response.read())
+        return content['message']
     except URLError, e:
         print('Unable to make appointment, Got an error code: ', e)
 
@@ -112,7 +114,7 @@ def predict(month,year):
 bostonLocation = getLatLug('detroit')
 #print getNearestBank(bostonLocation)
 
-appointment('2017-07-07','13:00',bostonLocation)
+print appointment('2017-01-21','13:00',bostonLocation)
 
 
 
