@@ -2,8 +2,9 @@ from __future__ import print_function
 from urllib2 import Request, urlopen, URLError
 import json
 import datetime as dt
+import urllib
 
-# --------------- Helpers that build all of the responses ----------------------
+# --------------- Helpers for calling API layer ----------------------
 
 BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
 
@@ -24,9 +25,9 @@ def getLatLug(address):
         print('No GeoCode. Got an error code:', e)
 
 def getBalance():
-    url = BackEndURL+'/balance'
+    url = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000/balance'
     post_fields = {'userId':123}
-    request = Request(url,data=str(post_fields))
+    request = Request(url+'?'+urllib.urlencode(post_fields))
     try:
         response = urlopen(request)
         content = json.loads(response.read())
@@ -36,15 +37,36 @@ def getBalance():
 
 def getNearestBank(location):
     lat,lng = location
-    url = BackEndURL+'/nearest_bank'
+    url = BackEndURL+'/nearestLocation'
     post_fields = {"latitude": lat, "longitude": lng}
-    request = Request(url,data=str(post_fields))
+    link = url +'?' + urllib.urlencode(post_fields)
     try:
+        request = Request(link)
+        #request.get_method = lambda: "POST"
         response = urlopen(request)
         content = json.loads(response.read())
+        print(content['nearestLocations'])
         return content['nearestLocations']
+
     except URLError, e:
         print('Unable to get nearest bank. Got an error code:', e)
+    
+def getHour(location,day):
+    lat,lng = location
+    print(location,day)
+    url = BackEndURL + '/openHours'
+    post_fields = {"latitude": lat, "longitude": lng, "day": day}
+    link = url +'?' + urllib.urlencode(post_fields)
+    try:
+        request = Request(link)
+        response = urlopen(request)
+        content = json.loads(response.read())
+        print(content['openHours'])
+        return content['openHours']
+    except URLError, e:
+        print('Unable to get Hours, Got an error code: ', e)
+
+# -------------------- Response Builders -----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
     return {
@@ -79,7 +101,18 @@ def build_my_response(session_attributes, card_title, output, reprompt_text):
     return build_response(session_attributes, build_speechlet_response(
         card_title,output,reprompt_text,False))
 
-# --------------- Functions that control the skill's behavior ------------------
+def parsehour(hour):
+    result = ''
+    hour = hour.split('-')
+    for i in hour:
+        i = i.strip().split(' ')
+        for n in i:
+            if n != '00':
+                result+= n+' '
+        result+='to '
+    return result[:-4]
+
+# --------------- Functions that control the skill's basic behavior ------------------
 
 def get_welcome_response():
     """ If we wanted to initialize the session to have some attributes we could
@@ -119,6 +152,12 @@ def log_intent_to_attributes(session,intent_name):
     else:
         session['attributes']['IntentLog'] = [intent_name]
 
+def add_date_time_to_attributes(session,datetime):
+    session['attributes']['datetime'] = datetime
+
+def add_weekday_to_attributes(session,weekday):
+    session['attributes']['weekday'] = weekday
+
 # -------------- Costom Intent Handlers -----------------
 
 def query_balance(intent,session):
@@ -138,11 +177,12 @@ def get_nearest_branch(intent,session):
     if session.get('attributes', {}):
         session_attributes = session['attributes']
     card_title = intent['name']
-
+    address = ''
     if "value" in intent['slots']['Address']:
         address = intent['slots']['Address']['value']
-        if "value" in intent['slots']['City']:
-            address += intent['slots']['City']['value']
+    if "value" in intent['slots']['City']:
+        address += intent['slots']['City']['value']
+    if address != '':
         nearest_branch = getNearestBank(getLatLug(address))
         if not nearest_branch:
             speech_output = "There is currently no bank near you, we are working on it."
@@ -160,12 +200,21 @@ def address_only(intent,session):
     if session.get('attributes', {}):
         session_attributes = session['attributes']
     log = session['attributes']['IntentLog']
+    address = ''
+    if "value" in intent['slots']['Address']:
+        address = intent['slots']['Address']['value']
+    if "value" in intent['slots']['City']:
+        address += ', '+intent['slots']['City']['value']
+    if address:
+        add_location_to_attributes(session,address)
 
     for i in xrange(len(log)):
         if log[len(log)-i-1] == "GetNearestBranchIntent":
             return get_nearest_branch(intent, session)
         elif log[len(log)-i-1] == "AppointmentIntent":
             return make_appointment(intent, session)
+        elif log[len(log)-i-1] == "GetOpenHourIntent":
+            return get_open_hour(intent, session)
     return get_welcome_response()
 
 def make_appointment(intent,session):
@@ -180,6 +229,51 @@ def make_appointment(intent,session):
         else:
             date = dt.datetime.today().strftime("%m/%d/%Y")
         
+def get_open_hour(intent,session):
+    session_attributes = {}
+    if session.get('attributes', {}):
+        session_attributes = session['attributes']
+    date = time = day = location = None
+    if 'datetime' in session_attributes:
+        [date, time] = session_attributes['datetime']
+    if 'weekday' in session_attributes:
+        day = session_attributes['weekday']
+    
+    if 'Location' in session_attributes:
+        location = session_attributes['Location']
+   
+    if 'Date' in intent['slots'] and 'value' in intent['slots']['Date']:
+        date = Intent['slots']['Date']['value']
+    elif not day:
+        day = dt.datetime.today().weekday()
+    if "Time" in intent['slots'] and 'value' in intent['slots']['Time']:
+        time = Intent['slots']['Date']['value']
+    if 'Day' in intent['slots'] and 'value' in intent['slots']['Day']:
+        day = Intent['slots']['Day']['value']
+
+    if date and not day:
+        year, month, day = (int(x) for x in date.split('-'))   
+        day = datetime.date(year, month, day).weekday()
+
+    if date or time:
+        add_date_time_to_attributes(session,[date,time])
+    if day:
+        add_weekday_to_attributes(session,day)
+
+    if not location:
+        speech_output = "Please give me an address so that I can search nearest branch for you."
+        reprompt_text = speech_output
+        return build_my_response(session_attributes,intent['name'],speech_output,reprompt_text)
+
+    hours = getHour(location,day)
+    current = 'open' if hours['current'] else 'closed'
+    today = parsehour(hours['today'])
+    tomorrow = parsehour(hours['tomorrow'])
+    tomorrow = 'bank open tomorrow from '+tomorrow if tomorrow != 'Closed' else 'tomorrow will {}be Closed all day.'.format('also ' if today=='Closed' else '')
+    today = 'it opens today from '+today if today != 'Closed' else 'it\'s Closed today all day'
+    speech_output = "Bank is currently {}, {}, {}".format(current,today,tomorrow)
+    reprompt_text = speech_output
+    return build_my_response(session_attributes,intent['name'],speech_output,reprompt_text)
 
 # --------------- Events ------------------
 
@@ -225,6 +319,10 @@ def on_intent(intent_request, session):
         return make_transfer(intent, session)
     elif intent_name == "GetOpenHourIntent":
         return get_open_hour(intent, session)
+    elif intent_name == "AMAZON.YesIntent":
+        return yes_handler()
+    elif intent_name == "AMAZON.NoIntent":
+        return no_handler()
     elif intent_name == "AMAZON.HelpIntent":
         return get_welcome_response()
     elif intent_name == "AMAZON.CancelIntent" or intent_name == "AMAZON.StopIntent":
@@ -257,9 +355,9 @@ def lambda_handler(event, context):
     prevent someone else from configuring a skill that sends requests to this
     function.
     """
-    # if (event['session']['application']['applicationId'] !=
-    #         "amzn1.echo-sdk-ams.app.[unique-value-here]"):
-    #     raise ValueError("Invalid Application ID")
+    if (event['session']['application']['applicationId'] !=
+         "amzn1.ask.skill.0fb6a300-ef40-4108-a5b8-aa7086bd3f48"):
+        raise ValueError("Invalid Application ID")
 
     if event['session']['new']:
         on_session_started({'requestId': event['request']['requestId']},
