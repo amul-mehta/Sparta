@@ -1,20 +1,12 @@
 from operator import sub
 
-from scipy.stats._discrete_distns import planck_gen
-from scipy.weave.examples.support_code_example import support_code
 from sklearn.svm import SVC
 from sklearn.multiclass import OneVsRestClassifier
-from sklearn.preprocessing import LabelBinarizer
 import csv
 from flask import Flask, request
 import requests
 import datetime
 import sqlite3
-
-
-
-
-
 import json
 
 app = Flask(__name__)
@@ -39,6 +31,56 @@ def predict_savings(month,year):
 
 api.add_resource(Predict, '/predict')"""
 
+
+
+@app.route('/login', methods = ['POST'])
+def login():
+    jsondata = request.data
+    print jsondata
+    data = json.loads(jsondata)
+    userid = data['userid']
+    paswd = data['password']
+    aid = data['aid']
+
+    conn = sqlite3.connect('user.db')
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT count(*) FROM AUTH WHERE userid = ?", (userid,))
+    data = cursor.fetchone()[0]
+    if data == 0:
+        conn_str = "INSERT INTO AUTH (USERID,AID,PASSWORD) \
+              VALUES (\'"+ userid + "\',\'"+ aid +"\',\'"+ paswd + "\')"
+        print conn_str
+        conn.execute(conn_str)
+        result = {'success': True, 'message': "Logged in successfuly"}
+    else:
+        result = {'success': False, 'message': "User already logged in please log out from other sessions."}
+
+    conn.commit()
+    conn.close()
+
+    return json.dumps(result)
+
+@app.route('/logout', methods = ['POST'])
+def logout():
+    jsondata = request.data
+    print jsondata
+    data = json.loads(jsondata)
+    userid = data['userid']
+    aid = data['aid']
+
+    conn = sqlite3.connect('user.db')
+    cursor = conn.cursor()
+
+    cr = cursor.execute("DELETE FROM AUTH WHERE userid = ? AND aid = ?", (userid,aid))
+    conn.commit()
+    if cr.arraysize == 1 :
+        result = {'success': True, 'message': "Logged out successfuly"}
+    else:
+        result = {'success': True, 'message': "Logged Out from every place."}
+
+    conn.close()
+    return json.dumps(result)
 
 
 
@@ -152,29 +194,36 @@ def transferMoney():
 
 @app.route('/scheduleAppointment', methods = ['GET'])
 def scheduleAppointment():
-    success = False
+    #TODO : add reccomendations of next available time slots.
+    success = True
     msg = ""
     time = request.args.get('time')
-    day = int(request.args.get('day'))
+    day = request.args.get('day')
     lat = request.args.get('latitude')
     lon = request.args.get('longitude')
     datafile = open('appointment.csv', 'r')
+    #datafile = open(, 'r')
     datareader = csv.reader(datafile, delimiter=',')
     data = []
+    flag = True
     for row in datareader:
-        data.append(row)
+        if flag:
+            flag = False
+        else:
+            data.append(row)
     print len(data)
 
-    now = datetime.datetime.now()
-    now_date = now.date
+    now = datetime.datetime.now().ctime()
+    now_date =int(now.split()[2])
+    print now_date
     # if date is of next month then reply no
     nearest = getNearestLocation(lat,lon,False)
-    day = 10
-    month = 2
+    day = 21 #0-29/30
+    month = 1
     hour = 13
     min = 25
-
-    if now_date < day:
+    print "HELLOO"
+    if now_date > (day+1):
         success = False
         msg = "Sorry, You entered an Invalid Date"
         return json.dumps({'success': success,'message':msg})
@@ -186,7 +235,8 @@ def scheduleAppointment():
     else:
         min = 00
         hour = (hour + 1) % 24
-
+    print hour
+    print "HELLOO"
     if hour >= 0 and hour < 9 :
         success = False
         msg = "Bank does not operate on these hours"
@@ -196,34 +246,78 @@ def scheduleAppointment():
 
     if not success:
         return json.dumps({'success': success, 'message': msg})
-
+    print "HELLOO"
     time_slot_hour = (hour - 9) * 2
+    print time_slot_hour
+
     time_slot_min = min - 00
     if time_slot_min >= 0:
         time_slot_hour+=1
 
-    success = True
-    msg = "Your appointment is successfully confirmed"
+    if data[day][time_slot_hour] != '1':
+        success = True
+        msg = "Your appointment is successfully confirmed at "+ getTimes([day,time_slot_hour])
+        data[day][time_slot_hour] = '1'
+        datafile.close()
+        datafile = open('appointment.csv','w')
+        df = csv.writer(datafile,delimiter=',')
+        df.writerows(data)
 
-    if data[day][time_slot_hour] == '1':
+    elif data[day][time_slot_hour] == '1':
         success = False
-        msg = "Time Slot not available on the given date and place"
+        msg = "Time Slot not available on the given date and place.  "
+        first = getNextAppointments(data,day,time_slot_hour)
+        msg += "Next Available Appointments are at : "
+        msg += getTimes(first[0]) + " , " + getTimes(first[1]) + " , "+ getTimes(first[2])
+
 
     return json.dumps({'success': success, 'message': msg})
-    """
-    if ( in recipient) :
-        if (amount < balance):
-            balance = balance - amount
-            success = True
-            msg = str(amount) + " has been successfully submitted for transfer to "+ name
-        else:
-            msg = "Sorry, You do not have sufficient balance in your account"
-    else:
-        msg = "Sorry, Cannot find " + name + " in the recipient List"
 
 
-    result = {"success": success,"message" : msg }
-    return json.dumps(result)"""
+def getNextAppointments(data,day,time_slot_hour):
+    first = []
+    count = 0
+    for days in range (0, len(data)):
+        for slots in range(0, len(data[0])):
+            if days == day:
+                if(slots > time_slot_hour):
+                    if slots != '1':
+                        if count < 3:
+                            count += 1
+                            d_s = []
+                            d_s.append(days)
+                            d_s.append(slots)
+                            first.append(d_s)
+                    else:
+                        return first
+            elif days > day :
+                if slots != '1':
+                    if count < 3:
+                        count += 1
+                        d_s = []
+                        d_s.append(days)
+                        d_s.append(slots)
+                        first.append(d_s)
+                else:
+                    return first
+    return first
+
+
+def getTimes(times):
+
+    day = times[0]
+    print day
+
+    slot = times[1]
+    extra = '00'
+    if(slot % 2 == 0):
+        slot = slot/2
+    else :
+        slot =int (slot / 2)
+        extra = '30'
+    slot = int(slot) + 9
+    return str(day) + 'th '+str(slot)+':'+ extra
+
 
 
 
@@ -232,7 +326,7 @@ def scheduleAppointment():
 
 if __name__ == '__main__':
 
-    conn = sqlite3.connect('user.db')
+    conn = sqlite3.connect('usr.db')
 
     balance = 5000.0
 
