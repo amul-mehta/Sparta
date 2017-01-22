@@ -23,37 +23,65 @@ def getLatLug(address):
 def getBalance():
     url = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000/balance'
     post_fields = {'userId':123}
-    request = Request(url,data=str(post_fields))
+    request = Request(url+'?'+urllib.urlencode(post_fields))
     try:
         response = urlopen(request)
         content = json.loads(response.read())
+
         return content['balance']
     except URLError, e:
         print('No Balance. Got an error code:', e)
 
 def getNearestBank(location):
     lat,lng = location
-    url = BackEndURL+'/nearestLocation/json?'
-    post_fields = {"latitude": str(lat), "longitude": str(lng)}
-    data = urllib.urlencode(post_fields)
-    print data
-    request = Request(url,data=data)
-    #request.get_method = lambda: "POST"
-    response = urlopen(request)
-    content = json.loads(response.read())
-    return content['nearestLocations']
-
-    '''
+    url = BackEndURL+'/nearestLocation'
+    post_fields = {"latitude": lat, "longitude": lng}
+    link = url +'?' + urllib.urlencode(post_fields)
     try:
+        request = Request(link)
+        #request.get_method = lambda: "POST"
+        response = urlopen(request)
+        content = json.loads(response.read())
+        return content['nearestLocations']
+
     except URLError, e:
         print('Unable to get nearest bank. Got an error code:', e)
-	'''
-print getBalance()
-bostonLocation = getLatLug('Boston')
-print bostonLocation
-print getNearestBank(bostonLocation)
+	
+
+def getHour(location,day):
+    lat,lng = location
+    url = BackEndURL + '/openHours'
+    post_fields = {"latitude": lat, "longitude": lng, "day": day}
+    link = url +'?' + urllib.urlencode(post_fields)
+    try:
+        request = Request(link)
+        response = urlopen(request)
+        content = json.loads(response.read())
+        return content['openHours']
+    except URLError, e:
+        print('Unable to get Hours, Got an error code: ', e)
 
 
+def transfer(name,amount):
+    url = BackEndURL + '/transferMoney'
+    post_fields = {'name':name,'amount':amount}
+    link = url +'?' + urllib.urlencode(post_fields)
+    #try:
+    print link
+    request = Request(link)
+    response = urlopen(request)
+    content = json.loads(response.read())
+    print(content)
+ #   except URLError, e:
+  #      print('Unable to transfer, Got an error code: ', e)
+
+
+#print 'get balance',getBalance()
+
+#bostonLocation = getLatLug('detroit')
+#print getNearestBank(bostonLocation)
+
+print transfer('amul',3.2)
 
 
 
