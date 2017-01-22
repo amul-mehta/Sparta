@@ -42,7 +42,7 @@ def login():
     conn = sqlite3.connect('usr.db')
     cursor = conn.cursor()
     print userid
-    cursor.execute("SELECT count(*) FROM AUTH WHERE userid = \""+userid+"\"")
+    cursor.execute("SELECT count(*) FROM AUTH WHERE userid = ?", (userid,))
     data = cursor.fetchone()[0]
     if data == 0:
         conn_str = "INSERT INTO AUTH (USERID,AID,PASSWORD) \
