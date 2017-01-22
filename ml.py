@@ -1,13 +1,17 @@
 from operator import sub
 
 from scipy.stats._discrete_distns import planck_gen
+from scipy.weave.examples.support_code_example import support_code
 from sklearn.svm import SVC
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.preprocessing import LabelBinarizer
 import csv
 from flask import Flask, request
 import requests
-import dateutil.parser
+import datetime
+import sqlite3
+
+
 
 
 
@@ -34,6 +38,9 @@ def predict_savings(month,year):
 
 
 api.add_resource(Predict, '/predict')"""
+
+
+
 
 @app.route('/predict', methods = ['GET'])
 def predict():
@@ -156,15 +163,24 @@ def scheduleAppointment():
     data = []
     for row in datareader:
         data.append(row)
-    print (data)
+    print len(data)
 
+    now = datetime.datetime.now()
+    now_date = now.date
     # if date is of next month then reply no
-    nearest = getNearestLocation(lat,lon,false)
+    nearest = getNearestLocation(lat,lon,False)
     day = 10
     month = 2
     hour = 13
     min = 25
+
+    if now_date < day:
+        success = False
+        msg = "Sorry, You entered an Invalid Date"
+        return json.dumps({'success': success,'message':msg})
+
     diff = min - 30
+
     if diff < 0:
         min = 30
     else:
@@ -178,7 +194,22 @@ def scheduleAppointment():
         success = False
         msg = "Bank does not operate on these hours"
 
-    return json.dumps({'lol' : 50})
+    if not success:
+        return json.dumps({'success': success, 'message': msg})
+
+    time_slot_hour = (hour - 9) * 2
+    time_slot_min = min - 00
+    if time_slot_min >= 0:
+        time_slot_hour+=1
+
+    success = True
+    msg = "Your appointment is successfully confirmed"
+
+    if data[day][time_slot_hour] == '1':
+        success = False
+        msg = "Time Slot not available on the given date and place"
+
+    return json.dumps({'success': success, 'message': msg})
     """
     if ( in recipient) :
         if (amount < balance):
@@ -200,6 +231,8 @@ def scheduleAppointment():
 
 
 if __name__ == '__main__':
+
+    conn = sqlite3.connect('user.db')
 
     balance = 5000.0
 
