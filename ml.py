@@ -33,14 +33,11 @@ api.add_resource(Predict, '/predict')"""
 
 
 
-@app.route('/login', methods = ['POST'])
+@app.route('/login', methods = ['GET'])
 def login():
-    jsondata = request.data
-    print jsondata
-    data = json.loads(jsondata)
-    userid = data['userid']
-    paswd = data['password']
-    aid = data['aid']
+    userid = request.args.get('userid')
+    paswd = request.args.get('password')
+    aid = request.args.get('aid')
 
     conn = sqlite3.connect('user.db')
     cursor = conn.cursor()
