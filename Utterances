@@ -1,0 +1,96 @@
+GetBalanceIntent show me balance
+GetBalanceIntent how much money
+GetBalanceIntent how much money I have
+GetBalanceIntent show me money
+GetBalanceIntent balance
+GetBalanceIntent gimme my balance
+GetBalanceIntent about my balance
+
+GetNearestBranchIntent where is the nearest bank
+GetNearestBranchIntent search for the nearest bank
+GetNearestBranchIntent bank near {Address} {City}
+GetNearestBranchIntent where is the cloest bank near {Address} {City}
+GetNearestBranchIntent where is the cloest bank near {Address}
+GetNearestBranchIntent where is the cloest bank
+GetNearestBranchIntent closest bank at {Address} {City}
+GetNearestBranchIntent closest bank at {Address}
+GetNearestBranchIntent nearest bank at {Address} {City}
+GetNearestBranchIntent search for nearest bank at {Address} {City}
+GetNearestBranchIntent search for nearest bank at {Address}
+GetNearestBranchIntent nearest bank at {Address}
+GetNearestBranchIntent bank at {Address}
+GetNearestBranchIntent bank at {Address} {City}
+GetNearestBranchIntent bank around {Address}
+GetNearestBranchIntent bank around {Address} {City}
+
+AddressOnlyIntent {Address} {City}
+AddressOnlyIntent {Address} in {City}
+AddressOnlyIntent at {Address}
+AddressOnlyIntent in {City} at {Address} 
+
+
+AppointmentIntent make an appointment
+AppointmentIntent appointment
+AppointmentIntent schedule an appointment
+AppointmentIntent meet a representative
+AppointmentIntent make an appointment at {Date} {Time}
+AppointmentIntent make an appointment on {Time} {Date}
+AppointmentIntent {Date} {Time} appointment
+AppointmentIntent {Time} {Date} appointment
+AppointmentIntent {Date} appointment
+AppointmentIntent {Time} appointment
+AppointmentIntent I want to go to bank at {Date} {Time}
+AppointmentIntent I want to go to bank at {Time} {Date}
+AppointmentIntent I want to go to bank at {Time}
+AppointmentIntent I want to go to bank at {Date}
+AppointmentIntent See representative at {Date} {Time}
+AppointmentIntent See representative at {Time} {Date}
+AppointmentIntent See representative {Time}
+AppointmentIntent See representative {Date}
+
+
+TransferMoneyIntent transfer
+TransferMoneyIntent transfer {Amount} dollars to {Person}
+TransferMoneyIntent give {Person} {Amount} dollars
+TransferMoneyIntent give {Person} Money
+TransferMoneyIntent transfer {Amount} dollars
+
+
+GetOpenHourIntent when does bank open
+GetOpenHourIntent when does bank close
+GetOpenHourIntent when does bank open
+GetOpenHourIntent is bank open on {Time} {Date}
+GetOpenHourIntent is bank open {Time} {Date}
+GetOpenHourIntent when does bank open on {Time} {Date}
+GetOpenHourIntent when does bank open on {Day}
+GetOpenHourIntent when does bank close on {Day}
+GetOpenHourIntent would bank open on {Day}
+GetOpenHourIntent is bank open on {Day}
+GetOpenHourIntent hours
+GetOpenHourIntent hours today
+GetOpenHourIntent tell me about bank hours
+
+PersonOnlyIntent {Person}
+PersonOnlyIntent to {Person}
+PersonOnlyIntent for {Person}
+
+MoneyOnlyIntent {Amount} dollars
+MoneyOnlyIntent {Amount} dollar
+MoneyOnlyIntent {Amount} total
+MoneyOnlyIntent {Amount}
+
+
+TimeOnlyIntent {Time}
+TimeOnlyIntent at {Time} 
+TimeOnlyIntent around {Time}
+TimeOnlyIntent after {Time}
+
+PredictIntent How much can I save {Month}
+PredictIntent How much can I spend {Month}
+PredictIntent How much can I spend
+PredictIntent Predict my saving
+PredictIntent Predict my saving for {Month}
+
+MonthOnlyIntent in {Month}
+MonthOnlyIntent {Month}
+

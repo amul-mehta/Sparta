@@ -1,0 +1,136 @@
+{
+  "intents": [
+    {
+      "intent": "GetBalanceIntent"
+    },
+    {
+      "intent": "GetNearestBranchIntent",
+      "slots": [
+        {
+          "name": "Address",
+          "type": "AMAZON.PostalAddress"
+        },
+        {
+          "name": "City",
+          "type": "AMAZON.US_CITY"
+        }
+      ]
+    },
+    {
+      "intent": "AddressOnlyIntent",
+      "slots": [
+        {
+          "name": "Address",
+          "type": "AMAZON.PostalAddress"
+        },
+        {
+          "name": "City",
+          "type": "AMAZON.US_CITY"
+        }
+      ]
+    },
+    {
+      "intent": "AppointmentIntent",
+      "slots": [
+        {
+          "name": "Date",
+          "type": "AMAZON.DATE"
+        },
+        {
+          "name": "Time",
+          "type": "AMAZON.TIME"
+        }
+      ]
+    },
+    {
+      "intent": "TransferMoneyIntent",
+      "slots": [
+        {
+          "name": "Person",
+          "type": "AMAZON.Person"
+        },
+        {
+          "name": "Amount",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "PersonOnlyIntent",
+      "slots": [
+        {
+          "name": "Person",
+          "type": "AMAZON.Person"
+        }
+      ]
+    },
+    {
+      "intent": "MoneyOnlyIntent",
+      "slots": [
+        {
+          "name": "Amount",
+          "type": "AMAZON.NUMBER"
+        }
+      ]
+    },
+    {
+      "intent": "TimeOnlyIntent",
+      "slots": [
+        {
+          "name": "Time",
+          "type": "AMAZON.TIME"
+        }
+      ]
+    },
+    {
+      "intent": "GetOpenHourIntent",
+      "slots": [
+        {
+          "name": "Time",
+          "type": "AMAZON.TIME"
+        },
+        {
+          "name": "Date",
+          "type": "AMAZON.DATE"
+        },
+        {
+          "name": "Day",
+          "type": "AMAZON.DayOfWeek"
+        }
+      ]
+    },
+    {
+      "intent": "PredictIntent",
+      "slots": [
+        {
+          "name": "Month",
+          "type": "AMAZON.Month"
+        }
+      ]
+    },
+    {
+      "intent": "MonthOnlyIntent",
+      "slots": [
+        {
+          "name": "Month",
+          "type": "AMAZON.Month"
+        }
+      ]
+    },
+    {
+      "intent": "AMAZON.HelpIntent"
+    },
+    {
+      "intent": "AMAZON.YesIntent"
+    },
+    {
+      "intent": "AMAZON.NoIntent"
+    },
+    {
+      "intent": "AMAZON.StopIntent"
+    },
+    {
+      "intent": "AMAZON.CancelIntent"
+    }
+  ]
+}
