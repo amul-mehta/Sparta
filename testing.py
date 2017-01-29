@@ -2,8 +2,8 @@ from urllib2 import Request, urlopen, URLError
 import urllib
 import json
 
-BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
-#BackEndURL = 'https://python-hello-world-flask-amulmehta-2232.mybluemix.net'
+#BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
+BackEndURL = 'https://python-hello-world-flask-amulmehta-2232.mybluemix.net'
 
 def getLatLug(address):
 
@@ -87,7 +87,7 @@ def appointment(date,time,location):
     url = BackEndURL + '/scheduleAppointment'
     post_fields = {'time':time,'day':date,'latitude':location[0],'longitude':location[1]}
     link = url + '?' + urllib.urlencode(post_fields)
-    
+    #print(link)
     try:
         request = Request(link)
         response = urlopen(request)
@@ -109,12 +109,27 @@ def predict(month,year):
         print('Unable to generate prediction, Got an error code: ', e)
 
 
+import socket               # Import socket module
+
+
+
+
+def sendToApp(message):
+    url = '35.22.103.23'
+    port = 6000
+    s = socket.socket()  
+    s.connect((url, port))
+    s.sendall(message)
+    s.close()
+
+
 #print 'get balance',getBalance()
 
 bostonLocation = getLatLug('detroit')
 #print getNearestBank(bostonLocation)
 
-print appointment('2017-01-21','13:00',bostonLocation)
+print appointment('2017-01-22','13:30',bostonLocation)
+sendToApp('Here I am! From Xueguang')
 
 
 

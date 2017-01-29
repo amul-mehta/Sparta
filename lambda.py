@@ -8,7 +8,8 @@ import urllib
 
 # --------------- Helpers for calling API layer ----------------------
 
-BackEndURL = 'https://python-hello-world-flask-amulmehta-2232.mybluemix.net'
+#BackEndURL = 'https://python-hello-world-flask-amulmehta-2232.mybluemix.net'
+BackEndURL = 'http://ec2-35-162-32-145.us-west-2.compute.amazonaws.com:5000'
 
 def getLatLug(address):
 
@@ -89,7 +90,7 @@ def appointment(date,time,location):
     url = BackEndURL + '/scheduleAppointment'
     post_fields = {'time':time,'day':date,'latitude':location[0],'longitude':location[1]}
     link = url + '?' + urllib.urlencode(post_fields)
-    
+    #print(link)
     try:
         request = Request(link)
         response = urlopen(request)
@@ -121,15 +122,26 @@ def predict(month,year):
         request = Request(link)
         response = urlopen(request)
         content = json.loads(response.read())
+
         return content['predict']
     except URLError, e:
         print('Unable to generate prediction, Got an error code: ', e)
 
-
+def sendToApp(message):
+    url = '35.22.103.23'
+    port = 6000
+    #post_fields = {'m':name}
+    #link = url + '?' + urllib.urlencode(post_fields)
+    
+    s = socket.socket()         # Create a socket object
+    s.connect((url, port))
+    s.sendall(message)
+    s.close()
 
 # -------------------- Response Builders -----------------------
 
 def build_speechlet_response(title, output, reprompt_text, should_end_session):
+    #sendToApp(output)
     return {
         'outputSpeech': {
             'type': 'PlainText',
@@ -194,7 +206,7 @@ def get_welcome_response():
 
 def handle_session_end_request():
     card_title = "Session Ended"
-    speech_output = "Thank you for trying the Alexa Skills Kit sample. " \
+    speech_output = "Thank you for using Bank Buddy, " \
                     "Have a nice day! "
     # Setting this to true ends the session and exits the skill.
     should_end_session = True
@@ -317,7 +329,7 @@ def make_appointment(intent,session):
         # on sucess:
         speech_output = appointment(date,time,location)
         #speech_output = 'We got you an appointment at {}{} sucessfully, see you then.'.format(time,date if date!=today else '')
-
+    print(speech_output)
     return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
 
 def get_open_hour(intent,session):
@@ -396,6 +408,14 @@ def make_transfer(intent,session):
         speech_output = "For transfering money, you can say: for example, transfer 100 dollars to Luke."
     return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
 
+def person_only_handler(intent,session):
+    log = session['attributes']['IntentLog']
+    for i in xrange(len(log)):
+        if log[-2] == "TransferMoneyIntent":
+            return make_transfer(intent, session)
+    return get_welcome_response()
+
+
 def predict_handler(intent,session):
     session_attributes = {}
     if session.get('attributes', {}):
@@ -411,7 +431,7 @@ def predict_handler(intent,session):
     if not month:
         speech_output = "Please tell me a speicifc month, for example, say, July."
     else:
-        speech_output = predict(month,2017)
+        speech_output = "You expected saving for {} is {} dollars.".format(month,predict(month,2017))
 
     return build_my_response(session_attributes,intent['name'],speech_output,speech_output)
 
@@ -456,8 +476,10 @@ def on_intent(intent_request, session):
         return address_only(intent,session)
     elif intent_name == "AppointmentIntent" or intent_name == "TimeOnlyIntent":
         return make_appointment(intent, session)
-    elif intent_name == "TransferMoneyIntent" or intent_name == "MoneyOnlyIntent" or intent_name == "PersonOnlyIntent":
+    elif intent_name == "TransferMoneyIntent" or intent_name == "MoneyOnlyIntent":
         return make_transfer(intent, session)
+    elif intent_name == "PersonOnlyIntent":
+        return person_only_handler(intent,session)
     elif intent_name == "GetOpenHourIntent":
         return get_open_hour(intent, session)
     elif intent_name == "PredictIntent" or intent_name == "MonthOnlyIntent":
